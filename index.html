@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sonic Plus Lite – مساعد ذكي</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #7c5dfa;
+            --primary-dark: #5b3ec4;
+            --bg-dark: #0f0f1a;
+            --bg-panel: #1a1a2e;
+            --bg-chat: #16162a;
+            --text: #e4e4f0;
+            --text-secondary: #a0a0c0;
+            --border: #2a2a40;
+            --user-msg-bg: linear-gradient(135deg, #7c5dfa, #5b3ec4);
+            --assistant-msg-bg: #1e1e35;
+            --sidebar-bg: #12122a;
+            --hover: #252545;
+            --danger: #ff5e7a;
+            --success: #00c9a7;
+            --warning: #ffb703;
+        }
+
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background: var(--bg-dark);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            color: var(--text);
+        }
+
+        /* ========== الشريط الجانبي ========== */
+        .sidebar {
+            width: 280px;
+            background: var(--sidebar-bg);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+            z-index: 10;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+        }
+
+        .sidebar-header {
+            padding: 25px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, #7c5dfa, #a78bfa);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            box-shadow: 0 8px 25px rgba(124,93,250,0.4);
+            animation: softPulse 3s infinite;
+        }
+
+        @keyframes softPulse {
+            0% { box-shadow: 0 8px 25px rgba(124,93,250,0.3); }
+            50% { box-shadow: 0 8px 35px rgba(124,93,250,0.6); }
+            100% { box-shadow: 0 8px 25px rgba(124,93,250,0.3); }
+        }
+
+        .logo-text {
+            font-size: 1.4em;
+            font-weight: 700;
+            background: linear-gradient(to left, #c4b5fd, #7c5dfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .new-chat-btn {
+            margin: 20px 15px;
+            padding: 14px;
+            background: linear-gradient(135deg, #7c5dfa, #5b3ec4);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            font-weight: 600;
+            font-family: 'Tajawal', sans-serif;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(124,93,250,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .new-chat-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(124,93,250,0.5);
+        }
+
+        .chat-history {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .chat-history-item {
+            padding: 14px 18px;
+            margin: 8px 0;
+            background: var(--bg-panel);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid transparent;
+            font-size: 0.95em;
+            color: var(--text-secondary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chat-history-item:hover {
+            background: var(--hover);
+            border-color: var(--primary);
+            color: var(--text);
+            transform: translateX(-4px);
+        }
+
+        .chat-history-item.active {
+            background: var(--hover);
+            border-color: var(--primary);
+            color: white;
+            box-shadow: 0 0 15px rgba(124,93,250,0.2);
+        }
+
+        .chat-title {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .delete-chat {
+            color: var(--danger);
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+            font-size: 1.1em;
+        }
+
+        .chat-history-item:hover .delete-chat {
+            opacity: 1;
+        }
+
+        /* ========== المنطقة الرئيسية ========== */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-chat);
+            position: relative;
+        }
+
+        .main-header {
+            padding: 18px 25px;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .model-badge {
+            background: rgba(124,93,250,0.15);
+            color: #c4b5fd;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-size: 0.9em;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid rgba(124,93,250,0.3);
+        }
+
+        .online-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            display: inline-block;
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .toggle-sidebar {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.8em;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .toggle-sidebar:hover {
+            color: var(--primary);
+        }
+
+        .chat-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background: radial-gradient(circle at top right, #1e1e35 0%, var(--bg-chat) 60%);
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 16px 22px;
+            border-radius: 20px;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            animation: messageSlide 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            font-size: 1em;
+        }
+
+        @keyframes messageSlide {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: var(--user-msg-bg);
+            color: white;
+            border-bottom-left-radius: 8px;
+            box-shadow: 0 8px 25px rgba(124,93,250,0.3);
+        }
+
+        .message.assistant {
+            align-self: flex-start;
+            background: var(--assistant-msg-bg);
+            color: var(--text);
+            border-bottom-right-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        /* مؤشر الكتابة */
+        .typing-cursor {
+            display: inline-block;
+            width: 8px;
+            height: 18px;
+            background: var(--primary);
+            margin-right: 2px;
+            animation: cursorBlink 0.8s infinite;
+            vertical-align: middle;
+        }
+
+        @keyframes cursorBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        .thinking-message {
+            align-self: flex-start;
+            background: var(--assistant-msg-bg);
+            border: 1px solid var(--border);
+            padding: 16px 22px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-secondary);
+        }
+
+        .thinking-dots {
+            display: flex;
+            gap: 5px;
+        }
+
+        .thinking-dots span {
+            width: 8px;
+            height: 8px;
+            background: var(--primary);
+            border-radius: 50%;
+            animation: dotBounce 1.4s infinite;
+        }
+
+        .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes dotBounce {
+            0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+            40% { transform: scale(1.2); opacity: 1; }
+        }
+
+        /* شاشة ترحيبية */
+        .welcome-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            gap: 20px;
+            opacity: 0.9;
+        }
+
+        .welcome-icon {
+            font-size: 5em;
+            animation: float 4s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        .welcome-title {
+            font-size: 2.5em;
+            font-weight: 700;
+            background: linear-gradient(135deg, #c4b5fd, #7c5dfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .welcome-subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1em;
+        }
+
+        /* صناديق الكود */
+        .code-block-container {
+            background: #0a0a15;
+            border: 1px solid #2a2a50;
+            border-radius: 14px;
+            margin: 12px 0;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .code-block-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #12122e;
+            padding: 10px 18px;
+            font-size: 0.85em;
+        }
+
+        .lang-badge {
+            background: rgba(124,93,250,0.2);
+            color: #c4b5fd;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8em;
+        }
+
+        .code-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 6px 14px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-family: 'Tajawal', sans-serif;
+            font-size: 0.85em;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-run {
+            background: var(--success);
+            color: #000;
+        }
+
+        .btn-run:hover {
+            background: #00b38a;
+            transform: scale(1.05);
+        }
+
+        .btn-download {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-download:hover {
+            background: #2563eb;
+            transform: scale(1.05);
+        }
+
+        .code-block-body {
+            padding: 18px;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            max-height: 320px;
+            overflow-y: auto;
+            color: #d4d4d4;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        /* شريط الإدخال */
+        .input-container {
+            padding: 20px 25px;
+            background: var(--bg-panel);
+            border-top: 1px solid var(--border);
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 12px;
+            background: var(--bg-dark);
+            border-radius: 30px;
+            padding: 6px;
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(124,93,250,0.2);
+        }
+
+        .input-wrapper input {
+            flex: 1;
+            padding: 14px 20px;
+            background: transparent;
+            border: none;
+            color: var(--text);
+            font-family: 'Tajawal', sans-serif;
+            font-size: 1em;
+            outline: none;
+        }
+
+        .input-wrapper input::placeholder {
+            color: #5a5a7a;
+        }
+
+        .send-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #7c5dfa, #5b3ec4);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 1.3em;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(124,93,250,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 8px 25px rgba(124,93,250,0.7);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* شريط تمرير */
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #2a2a40;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        /* للجوال */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                right: -300px;
+                top: 0;
+                bottom: 0;
+                width: 280px;
+            }
+            .sidebar.open {
+                right: 0;
+            }
+            .message {
+                max-width: 90%;
+            }
+            .welcome-title {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- الشريط الجانبي -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">⚡</div>
+                <span class="logo-text">Sonic Plus Lite</span>
+            </div>
+        </div>
+        <button class="new-chat-btn" onclick="newChat()">
+            ✨ محادثة جديدة
+        </button>
+        <div class="chat-history" id="chatHistory"></div>
+    </div>
+
+    <!-- المحتوى الرئيسي -->
+    <div class="main">
+        <div class="main-header">
+            <div class="model-badge">
+                <span class="online-dot"></span>
+                Tencent Hy3
+            </div>
+            <button class="toggle-sidebar" onclick="toggleSidebar()" title="القائمة">☰</button>
+        </div>
+
+        <div class="chat-area" id="chatArea">
+            <!-- رسائل أو شاشة ترحيب -->
+        </div>
+
+        <div class="input-container">
+            <div class="input-wrapper">
+                <input type="text" id="userInput" placeholder="اسأل Sonic Plus Lite..." onkeydown="if(event.key==='Enter') sendMessage()" autocomplete="off">
+                <button class="send-btn" onclick="sendMessage()">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===================== الإعدادات =====================
+        const API_KEY = "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";
+        const API_URL = "https://openrouter.ai/api/v1/chat/completions";
+        const MODEL = "tencent/hy3:free";
+
+        const SYSTEM_PROMPT = `أنت Sonic Plus Lite، مساعد ذكي خاضع لاختبار صارم.
+القواعد:
+1. لا تكذب أبداً.
+2. أجب بدقة وحقيقة.
+3. إن لم تعرف الإجابة قل "لا أعرف".
+4. لا تتهرب، إلا إذا كان السؤال غير آمن، واشرح السبب.
+5. كن مباشراً وموضوعياً.`;
+
+        // حالة التطبيق
+        let currentChatId = null;
+        let chats = {};
+        let isGenerating = false;
+
+        const chatArea = document.getElementById('chatArea');
+        const userInput = document.getElementById('userInput');
+        const chatHistoryDiv = document.getElementById('chatHistory');
+        const sendBtn = document.querySelector('.send-btn');
+
+        // ===================== دوال LocalStorage =====================
+        function loadChats() {
+            const saved = localStorage.getItem('sonic_chats_v2');
+            if (saved) {
+                chats = JSON.parse(saved);
+            } else {
+                const id = generateId();
+                chats[id] = { title: 'محادثة جديدة', messages: [{ role: 'system', content: SYSTEM_PROMPT }] };
+                currentChatId = id;
+                saveChats();
+            }
+        }
+
+        function saveChats() {
+            localStorage.setItem('sonic_chats_v2', JSON.stringify(chats));
+        }
+
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+        }
+
+        function getCurrentChat() {
+            if (!currentChatId || !chats[currentChatId]) {
+                newChat();
+            }
+            return chats[currentChatId];
+        }
+
+        // ===================== واجهة المحادثات السابقة =====================
+        function renderChatHistory() {
+            chatHistoryDiv.innerHTML = '';
+            Object.keys(chats).forEach(id => {
+                const chat = chats[id];
+                const div = document.createElement('div');
+                div.className = `chat-history-item${id === currentChatId ? ' active' : ''}`;
+                div.innerHTML = `
+                    <span class="chat-title">${chat.title || 'محادثة جديدة'}</span>
+                    <span class="delete-chat" title="حذف">🗑️</span>
+                `;
+                div.querySelector('.chat-title').onclick = () => switchChat(id);
+                div.querySelector('.delete-chat').onclick = (e) => {
+                    e.stopPropagation();
+                    deleteChat(id);
+                };
+                chatHistoryDiv.appendChild(div);
+            });
+        }
+
+        function newChat() {
+            const id = generateId();
+            chats[id] = { title: 'محادثة جديدة', messages: [{ role: 'system', content: SYSTEM_PROMPT }] };
+            currentChatId = id;
+            saveChats();
+            renderChatHistory();
+            renderMessages();
+            userInput.focus();
+        }
+
+        function switchChat(id) {
+            currentChatId = id;
+            renderChatHistory();
+            renderMessages();
+        }
+
+        function deleteChat(id) {
+            if (Object.keys(chats).length <= 1) {
+                alert('لا يمكن حذف جميع المحادثات.');
+                return;
+            }
+            delete chats[id];
+            if (currentChatId === id) {
+                currentChatId = Object.keys(chats)[0];
+            }
+            saveChats();
+            renderChatHistory();
+            renderMessages();
+        }
+
+        function updateChatTitle(id, firstMessage) {
+            if (chats[id] && chats[id].title === 'محادثة جديدة') {
+                chats[id].title = firstMessage.substring(0, 35) + (firstMessage.length > 35 ? '...' : '');
+                saveChats();
+                renderChatHistory();
+            }
+        }
+
+        // ===================== عرض الرسائل =====================
+        function renderMessages() {
+            chatArea.innerHTML = '';
+            const chat = getCurrentChat();
+            if (!chat) return;
+
+            const visibleMessages = chat.messages.filter(m => m.role !== 'system');
+            if (visibleMessages.length === 0) {
+                chatArea.innerHTML = `
+                    <div class="welcome-screen">
+                        <div class="welcome-icon">⚡</div>
+                        <div class="welcome-title">Sonic Plus Lite</div>
+                        <div class="welcome-subtitle">مساعد ذكي سريع وصادق. جاهز للإجابة على أسئلتك.</div>
+                    </div>`;
+                return;
+            }
+
+            visibleMessages.forEach(msg => {
+                if (msg.role === 'user') {
+                    appendUserMessage(msg.content, false);
+                } else {
+                    appendAssistantMessage(msg.content, false);
+                }
+            });
+            scrollToBottom();
+        }
+
+        function appendUserMessage(content, save = true) {
+            const div = document.createElement('div');
+            div.className = 'message user';
+            div.textContent = content;
+            chatArea.appendChild(div);
+            if (save) {
+                getCurrentChat().messages.push({ role: 'user', content });
+                updateChatTitle(currentChatId, content);
+                saveChats();
+                renderChatHistory();
+            }
+            scrollToBottom();
+        }
+
+        // تأثير الكتابة حرفاً حرفاً
+        async function typeWriterEffect(element, fullText, speed = 20) {
+            element.innerHTML = '';
+            const cursor = document.createElement('span');
+            cursor.className = 'typing-cursor';
+            element.appendChild(cursor);
+            
+            for (let i = 0; i < fullText.length; i++) {
+                // إدراج الحرف قبل المؤشر
+                const textNode = document.createTextNode(fullText[i]);
+                element.insertBefore(textNode, cursor);
+                scrollToBottom();
+                await new Promise(resolve => setTimeout(resolve, speed));
+            }
+            // إزالة المؤشر بعد الانتهاء
+            if (cursor.parentNode) cursor.remove();
+        }
+
+        function appendAssistantMessage(content, save = true, animated = true) {
+            const div = document.createElement('div');
+            div.className = 'message assistant';
+            chatArea.appendChild(div);
+            
+            if (animated) {
+                // بدء تأثير الكتابة
+                typeWriterEffect(div, content, 15).then(() => {
+                    if (save) {
+                        getCurrentChat().messages.push({ role: 'assistant', content });
+                        saveChats();
+                    }
+                    isGenerating = false;
+                    updateSendButton();
+                });
+            } else {
+                div.textContent = content;
+                if (save) {
+                    getCurrentChat().messages.push({ role: 'assistant', content });
+                    saveChats();
+                }
+            }
+            scrollToBottom();
+        }
+
+        function showThinkingIndicator() {
+            const div = document.createElement('div');
+            div.className = 'thinking-message';
+            div.id = 'thinkingIndicator';
+            div.innerHTML = `
+                <span>يفكر Sonic Plus</span>
+                <div class="thinking-dots">
+                    <span></span><span></span><span></span>
+                </div>`;
+            chatArea.appendChild(div);
+            scrollToBottom();
+        }
+
+        function removeThinkingIndicator() {
+            const el = document.getElementById('thinkingIndicator');
+            if (el) el.remove();
+        }
+
+        function scrollToBottom() {
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        function updateSendButton() {
+            sendBtn.disabled = isGenerating;
+        }
+
+        // ===================== صناديق الكود =====================
+        function wrapCodeBlocks(element) {
+            // تحويل ```language\ncode``` إلى صناديق كود
+            const html = element.innerHTML;
+            const regex = /```(\w*)\n?([\s\S]*?)```/g;
+            if (!regex.test(html)) return;
+            
+            const newHtml = html.replace(regex, (match, lang, code) => {
+                const escapedCode = escapeHTML(code.trim());
+                return `
+                <div class="code-block-container">
+                    <div class="code-block-header">
+                        <span class="lang-badge">${lang || 'code'}</span>
+                        <div class="code-actions">
+                            <button class="btn btn-run" data-code="${encodeURIComponent(code.trim())}" data-lang="${lang}">▶ تشغيل</button>
+                            <button class="btn btn-download" data-code="${encodeURIComponent(code.trim())}" data-lang="${lang}">⬇ تنزيل</button>
+                        </div>
+                    </div>
+                    <div class="code-block-body">${escapedCode}</div>
+                </div>`;
+            });
+            element.innerHTML = newHtml;
+            
+            // ربط أزرار التشغيل والتنزيل
+            element.querySelectorAll('.btn-run').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const code = decodeURIComponent(this.dataset.code);
+                    const lang = this.dataset.lang;
+                    runCode(code, lang);
+                });
+            });
+            element.querySelectorAll('.btn-download').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const code = decodeURIComponent(this.dataset.code);
+                    const lang = this.dataset.lang;
+                    downloadCode(code, lang);
+                });
+            });
+        }
+
+        function escapeHTML(text) {
+            return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function runCode(code, lang) {
+            if (lang === 'html' || code.trim().startsWith('<!DOCTYPE html') || code.includes('<html')) {
+                const win = window.open('', '_blank');
+                if (win) {
+                    win.document.write(code);
+                    win.document.close();
+                } else {
+                    alert('الرجاء السماح بالنوافذ المنبثقة.');
+                }
+            } else {
+                alert('يمكن تشغيل أكواد HTML فقط مباشرة. قم بتنزيل الملف لتشغيله.');
+            }
+        }
+
+        function downloadCode(code, lang) {
+            let ext = '.txt';
+            if (lang === 'html' || lang === 'htm') ext = '.html';
+            else if (lang === 'css') ext = '.css';
+            else if (lang === 'javascript' || lang === 'js') ext = '.js';
+            else if (lang === 'python' || lang === 'py') ext = '.py';
+            else if (lang === 'java') ext = '.java';
+            else if (lang === 'json') ext = '.json';
+            
+            const blob = new Blob([code], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'code' + ext;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // ===================== إرسال الرسائل =====================
+        async function sendMessage() {
+            if (isGenerating) return;
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            appendUserMessage(text);
+            userInput.value = '';
+            isGenerating = true;
+            updateSendButton();
+            showThinkingIndicator();
+
+            try {
+                const chat = getCurrentChat();
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Content-Type': 'application/json',
+                        'HTTP-Referer': window.location.origin || 'http://localhost',
+                        'X-Title': 'Sonic Plus Lite'
+                    },
+                    body: JSON.stringify({
+                        model: MODEL,
+                        messages: chat.messages,
+                        temperature: 0.0,
+                        max_tokens: 2048
+                    })
+                });
+
+                removeThinkingIndicator();
+
+                if (!response.ok) {
+                    const errText = await response.text();
+                    let errMsg = `❌ خطأ ${response.status}`;
+                    try {
+                        const errJson = JSON.parse(errText);
+                        errMsg += `: ${errJson.error?.message || errText}`;
+                    } catch { errMsg += `: ${errText}`; }
+                    appendAssistantMessage(errMsg, false, false);
+                    isGenerating = false;
+                    updateSendButton();
+                    return;
+                }
+
+                const data = await response.json();
+                const reply = data.choices[0].message.content;
+                
+                // عرض الرد مع تأثير الكتابة
+                const assistantDiv = document.createElement('div');
+                assistantDiv.className = 'message assistant';
+                chatArea.appendChild(assistantDiv);
+                
+                await typeWriterEffect(assistantDiv, reply, 15);
+                
+                // معالجة صناديق الكود بعد انتهاء الكتابة
+                wrapCodeBlocks(assistantDiv);
+                
+                getCurrentChat().messages.push({ role: 'assistant', content: reply });
+                saveChats();
+
+            } catch (error) {
+                removeThinkingIndicator();
+                appendAssistantMessage(`❌ فشل الاتصال: ${error.message}\nتأكد من تشغيل الملف عبر Live Server.`, false, false);
+            } finally {
+                isGenerating = false;
+                updateSendButton();
+            }
+        }
+
+        // ===================== الشريط الجانبي للجوال =====================
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+
+        // ===================== بدء التشغيل =====================
+        loadChats();
+        if (!currentChatId) newChat();
+        else {
+            renderChatHistory();
+            renderMessages();
+        }
+        updateSendButton();
+    </script>
+</body>
+</html>
